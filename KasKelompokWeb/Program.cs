@@ -3,10 +3,14 @@ using KasKelompok.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Daftarkan Controller & Service
-builder.Services.AddControllers();
+// 1. Daftarkan Controller & Services (Mencakup Semua Modul PBO)
+builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<KasCalculatorService>();
 builder.Services.AddSingleton<JsonStorageAndReportService>();
+builder.Services.AddSingleton<IWhatsAppService, WhatsAppService>();
+builder.Services.AddSingleton<IExporter<Pengeluaran>, CsvExportService>();
+builder.Services.AddSingleton(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddSingleton<IPatunganService, PatunganService>();
 
 var app = builder.Build();
 
@@ -59,6 +63,12 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapControllers();
 
 app.Run();

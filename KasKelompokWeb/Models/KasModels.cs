@@ -1,4 +1,6 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace KasKelompok.Models
 {
@@ -6,25 +8,23 @@ namespace KasKelompok.Models
     public enum UserRole { Bendahara, Anggota }
 
     // =========================================================================
-    // POIN 1: VARIABLE, GET, SET, METHOD (Class Induk Siswa)
+    // POIN 1: VARIABLE, GET, SET, METHOD (Class Induk Siswa - Enkapsulasi)
     // =========================================================================
     public class Siswa
     {
-        // Variable (private field)
         private string _id = string.Empty;
         private string _nama = string.Empty;
         private string _npm = string.Empty;
 
-        // Property Get & Set dengan validasi
         public string Id
         {
-            get { return _id; }
-            set { _id = value; }
+            get => _id;
+            set => _id = value;
         }
 
         public string Nama
         {
-            get { return _nama; }
+            get => _nama;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -35,7 +35,7 @@ namespace KasKelompok.Models
 
         public string Npm
         {
-            get { return _npm; }
+            get => _npm;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -44,14 +44,17 @@ namespace KasKelompok.Models
             }
         }
 
-        // Constructor kosong (wajib ada agar JSON Serializer ASP.NET tidak error)
+        public string NomorHp { get; set; } = string.Empty;
+
+        // Constructor kosong untuk System.Text.Json
         public Siswa() { }
 
-        public Siswa(string id, string nama, string npm)
+        public Siswa(string id, string nama, string npm, string nomorHp = "")
         {
             Id = id;
             Nama = nama;
             Npm = npm;
+            NomorHp = nomorHp;
         }
 
         // Method Getter & Setter eksplisit
@@ -74,7 +77,7 @@ namespace KasKelompok.Models
 
         public string PinAkses
         {
-            get { return _pinAkses; }
+            get => _pinAkses;
             set
             {
                 if (value.Length < 4)
@@ -85,8 +88,8 @@ namespace KasKelompok.Models
 
         public Bendahara() { }
 
-        public Bendahara(string id, string nama, string npm, string pinAkses)
-            : base(id, nama, npm)
+        public Bendahara(string id, string nama, string npm, string pinAkses, string nomorHp = "")
+            : base(id, nama, npm, nomorHp)
         {
             PinAkses = pinAkses;
         }
@@ -100,7 +103,7 @@ namespace KasKelompok.Models
     }
 
     // =========================================================================
-    // POIN 1 & 2 PADA TRANSAKSI KAS (TransaksiDasar -> Pengeluaran)
+    // POIN 1 & 2 PADA TRANSAKSI (TransaksiDasar -> Pengeluaran)
     // =========================================================================
     public class TransaksiDasar
     {
@@ -112,7 +115,7 @@ namespace KasKelompok.Models
 
         public string NamaPengeluaran
         {
-            get { return _namaPengeluaran; }
+            get => _namaPengeluaran;
             set
             {
                 if (string.IsNullOrWhiteSpace(value))
@@ -123,7 +126,7 @@ namespace KasKelompok.Models
 
         public decimal TotalBiaya
         {
-            get { return _totalBiaya; }
+            get => _totalBiaya;
             set
             {
                 if (value < 0)
@@ -134,6 +137,8 @@ namespace KasKelompok.Models
 
         public decimal GetTotalBiaya() => _totalBiaya;
         public void SetTotalBiaya(decimal nominal) => TotalBiaya = nominal;
+
+        public virtual decimal HitungTotalAkhir() => TotalBiaya;
 
         public virtual string CetakInfo()
         {
@@ -156,12 +161,30 @@ namespace KasKelompok.Models
             return StatusBayar.Where(s => s.IsLunas).Sum(s => s.Porsi);
         }
 
+        public override decimal HitungTotalAkhir()
+        {
+            return Math.Round(Subtotal * (1 + PajakPersen / 100m), 0);
+        }
+
         public override string CetakInfo()
         {
             return $"[{IdTagihan}] {NamaPengeluaran} ({Kategori}) - Total: Rp {TotalBiaya:N0} | Terkumpul: Rp {HitungTerkumpul():N0}";
         }
     }
 
+    // INHERITANCE: Pengeluaran Luar Negeri (Pajak 11%)
+    public class PengeluaranLuarNegeri : Pengeluaran
+    {
+        public PengeluaranLuarNegeri()
+        {
+            Kategori = "Luar Negeri";
+            PajakPersen = 11m; // PPN Luar Negeri 11%
+        }
+    }
+
+    // =========================================================================
+    // STATUS BAYAR, TRANSFER UTANG, & AUDIT LOG
+    // =========================================================================
     public class StatusBayar
     {
         public string SiswaId { get; set; } = string.Empty;
@@ -184,5 +207,15 @@ namespace KasKelompok.Models
         public string Actor { get; set; } = "Bendahara";
         public string Action { get; set; } = string.Empty;
         public string Detail { get; set; } = string.Empty;
+    }
+
+    public class KasDatabase
+    {
+        public string NamaKelompok { get; set; } = "Kas Kelompok TI-3A";
+        public decimal SaldoAwalKas { get; set; } = 350000;
+        public string PinBendahara { get; set; } = "1234";
+        public List<Siswa> SiswaList { get; set; } = new();
+        public List<Pengeluaran> PengeluaranList { get; set; } = new();
+        public List<AuditLogEntry> AuditLogs { get; set; } = new();
     }
 }

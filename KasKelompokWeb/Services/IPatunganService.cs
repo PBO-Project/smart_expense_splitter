@@ -1,19 +1,21 @@
-﻿using KasKelompokWeb.Models;
+using System.Collections.Generic;
+using KasKelompok.Models;
 
-namespace KasKelompokWeb.Services;
-
-public interface IPatunganService
+namespace KasKelompok.Services
 {
-    Siswa TambahSiswa(string nama, string npm);
-    List<Siswa> DaftarSiswa();
-    List<Siswa> CariSiswa(string kataKunci);
+    public interface IPatunganService
+    {
+        Siswa TambahSiswa(string nama, string npm, string nomorHp = "");
+        List<Siswa> DaftarSiswa();
+        List<Siswa> CariSiswa(string kataKunci);
 
-    Pengeluaran BuatTagihan(string nama, decimal totalBiaya, List<int> idSiswaTerlibat, bool luarNegeri = false);
-    List<Pengeluaran> DaftarTagihan();
+        Pengeluaran BuatTagihan(string nama, decimal totalBiaya, List<string> idSiswaTerlibat, bool luarNegeri = false);
+        List<Pengeluaran> DaftarTagihan();
 
-    void TandaiLunas(int idTagihan, int idSiswa);
-    (decimal terkumpul, decimal kurang) HitungDana(int idTagihan);
-    string StatusTagihan(int idTagihan);
+        void TandaiLunas(string idTagihan, string idSiswa);
+        (decimal terkumpul, decimal kurang) HitungDana(string idTagihan);
+        string StatusTagihan(string idTagihan);
 
-    List<StatusBayar> DaftarStatus();
+        List<StatusBayar> DaftarStatus();
+    }
 }
